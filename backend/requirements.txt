@@ -1,0 +1,34 @@
+# Deep Learning and ML Libraries
+tensorflow==2.15.0
+keras==2.15.0
+torch==2.1.0
+torchvision==0.16.0
+scikit-learn==1.3.2
+numpy==1.24.3
+pandas==2.1.4
+
+# Image Processing
+opencv-python==4.8.1.78
+Pillow==10.1.0
+imageio==2.33.1
+albumentations==1.3.1
+
+# Web Framework
+flask==3.0.0
+flask-cors==4.0.0
+flask-restful==0.3.10
+
+# Visualization
+matplotlib==3.8.2
+seaborn==0.13.0
+plotly==5.18.0
+
+# Utilities
+tqdm==4.66.1
+python-dotenv==1.0.0
+pyyaml==6.0.1
+joblib==1.3.2
+
+# Model Optimization
+onnx==1.15.0
+onnxruntime==1.16.3

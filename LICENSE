@@ -1,0 +1,58 @@
+MIT License
+
+Copyright (c) 2026 Advanced Brain Tumor Detection System
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+================================================================================
+MEDICAL DISCLAIMER
+================================================================================
+
+This software is designed as a DIAGNOSTIC AID and RESEARCH TOOL for medical
+professionals and researchers. It is NOT intended to replace professional
+medical judgment, diagnosis, or treatment.
+
+IMPORTANT LEGAL NOTICES:
+
+1. NOT A MEDICAL DEVICE: This software has not been approved by any regulatory
+   agency (FDA, CE, etc.) as a medical device.
+
+2. NO WARRANTIES: The software is provided "as is" without any warranties of
+   any kind, including accuracy, reliability, or fitness for medical use.
+
+3. PROFESSIONAL OVERSIGHT REQUIRED: All results must be reviewed and validated
+   by qualified medical professionals before any clinical decisions are made.
+
+4. NO LIABILITY: The authors and contributors assume no liability for any
+   medical decisions, diagnoses, or treatments based on this software.
+
+5. RESEARCH USE: This software is intended for research and educational
+   purposes. Clinical use requires proper validation and regulatory approval.
+
+6. DATA PRIVACY: Users are responsible for complying with all applicable
+   data privacy regulations (HIPAA, GDPR, etc.) when using this software.
+
+7. DATASET LICENSING: Users must ensure they have proper rights and licenses
+   for any medical imaging datasets used with this software.
+
+BY USING THIS SOFTWARE, YOU ACKNOWLEDGE THAT YOU HAVE READ AND UNDERSTOOD
+THESE DISCLAIMERS AND AGREE TO USE THE SOFTWARE RESPONSIBLY AND IN COMPLIANCE
+WITH ALL APPLICABLE LAWS AND REGULATIONS.
+
+================================================================================
