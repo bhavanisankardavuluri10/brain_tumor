@@ -1,0 +1,12 @@
+{
+    "accuracy": 0.30892448512585813,
+    "precision": 0.09543433751027654,
+    "recall": 0.30892448512585813,
+    "f1_score": 0.14582099822374422,
+    "cohen_kappa": 0.0,
+    "matthews_corr_coef": 0.0,
+    "training_time_minutes": 123.4011343240738,
+    "evaluation_time_seconds": 66.97872161865234,
+    "avg_prediction_time_ms": 51.08979528501323,
+    "timestamp": "20260126_205852"
+}

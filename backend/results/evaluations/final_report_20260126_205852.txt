@@ -1,0 +1,72 @@
+
+==========================================================================================
+BRAIN TUMOR DETECTION MODEL - FINAL EVALUATION REPORT (GPU-OPTIMIZED)
+==========================================================================================
+
+Training Date: 2026-01-26 23:03:33
+Model ID: 20260126_205852
+Architecture: efficientnet-b4
+
+==========================================================================================
+GPU CONFIGURATION
+==========================================================================================
+GPUs Available: 0
+CUDA Available: False
+TensorFlow Version: 2.20.0
+Mixed Precision: Enabled (float16)
+
+==========================================================================================
+DATASET STATISTICS
+==========================================================================================
+Training Samples:   4,571
+Validation Samples: 1,141
+Test Samples:       1,311
+Classes:            glioma, meningioma, notumor, pituitary
+Batch Size:         32
+
+==========================================================================================
+PERFORMANCE METRICS
+==========================================================================================
+Overall Accuracy:   30.89%
+Precision:          9.54%
+Recall:             30.89%
+F1-Score:           14.58%
+Cohen's Kappa:      0.0000
+Matthews Corr Coef: 0.0000
+
+==========================================================================================
+TIMING METRICS
+==========================================================================================
+Training Time:      123.40 minutes
+Evaluation Time:    66.98 seconds
+Avg Prediction:     51.09 ms per image
+
+==========================================================================================
+ROC-AUC SCORES (Per Class)
+==========================================================================================
+glioma         : 0.3343
+meningioma     : 0.4649
+notumor        : 0.5610
+pituitary      : 0.3411
+
+Average AUC: 0.4253
+
+==========================================================================================
+MODEL FILES
+==========================================================================================
+Production Model:   models/trained/final_model.keras
+Timestamped Model:  models/trained/20260126_205852/
+Metrics:            results/metrics/
+Plots:              results/plots/
+TensorBoard Logs:   logs/tensorboard_20260126_205852/
+
+==========================================================================================
+NEXT STEPS
+==========================================================================================
+1. Review confusion matrix and classification report in results/plots/
+2. Analyze ROC curves for class-specific performance
+3. Test model with: python predict.py <image_path>
+4. Start web interface: python app.py
+5. View training logs: tensorboard --logdir=logs/
+
+==========================================================================================
