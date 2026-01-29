@@ -1,66 +1,73 @@
-# How to Run the Brain Tumor Detection Project
+# 🚀 Quick Run Guide - NeuroScan AI
 
-## Quick Commands
+## ⚡ Run in 2 Minutes
 
-### 1. Install Dependencies
+### Step 1: Start Backend
 ```bash
 cd backend
 pip install -r requirements.txt
-```
-
-### 2. Train the Model
-```bash
-cd backend
-python train_gpu_optimized.py
-```
-Wait 2-3 hours for training to complete.
-
-### 3. Test the Model
-```bash
-cd backend
-python predict.py --image ../data/raw/Testing/glioma/Te-gl_0015.jpg
-```
-
-### 4. Run Web Application
-
-**Terminal 1 (Backend):**
-```bash
-cd backend
 python app.py
 ```
+✅ Server running at http://localhost:5000
 
-**Terminal 2 (Frontend):**
+### Step 2: Start Frontend (New Terminal)
 ```bash
 cd frontend
 npm install
 npm start
 ```
+✅ App running at http://localhost:3000
 
-Open: http://localhost:3000
+### Step 3: Open Browser
+Go to: **http://localhost:3000**
 
 ---
 
-## Project Structure
+## 📁 Project Structure
 
 ```
-Project/
+NeuroScan-AI/
 ├── backend/
-│   ├── app.py                     # Web server
-│   ├── train_gpu_optimized.py     # Train model
-│   ├── predict.py                 # Test model
-│   ├── model.py                   # Model architecture
-│   ├── config.yaml                # Configuration
-│   └── requirements.txt           # Dependencies
+│   ├── app.py              # Flask API server
+│   ├── train_fixed.py      # Training script (MobileNetV2)
+│   ├── config.yaml         # Configuration
+│   ├── requirements.txt    # Python packages
+│   └── models/trained/
+│       └── final_model.keras   # Trained model (96.95%)
 │
-├── frontend/                      # React web app
-├── data/raw/                      # Dataset (7,023 images)
-│
-├── README.md                      # Overview
-├── COMPLETE_SETUP_GUIDE.md        # Detailed guide
-├── QUICK_START.md                 # Quick start
-└── RUN.md                         # This file
+├── frontend/               # React web app
+├── data/raw/               # MRI dataset
+├── INSTRUCTIONS.md         # Detailed guide
+└── RUN.md                  # This file
 ```
 
 ---
 
-## That's it! Simple and clean.
+## 🔄 Retrain Model (Optional)
+
+```bash
+cd backend
+python train_fixed.py
+```
+
+---
+
+## 🛠️ Troubleshooting
+
+| Issue | Fix |
+|-------|-----|
+| Port in use | `Ctrl+C` and restart |
+| Module not found | `pip install -r requirements.txt` |
+| Model not loaded | Check `models/trained/final_model.keras` exists |
+
+---
+
+## 📊 Model Info
+
+- **Architecture:** MobileNetV2
+- **Accuracy:** 96.95%
+- **Classes:** Glioma, Meningioma, Pituitary, No Tumor
+
+---
+
+**That's it! Enjoy using NeuroScan AI 🧠**

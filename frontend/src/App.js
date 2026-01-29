@@ -1,478 +1,763 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { useDropzone } from 'react-dropzone';
 import axios from 'axios';
+import {
+  Chart as ChartJS,
+  CategoryScale,
+  LinearScale,
+  BarElement,
+  Title,
+  Tooltip,
+  Legend,
+  ArcElement,
+  PointElement,
+  LineElement,
+  Filler,
+} from 'chart.js';
+import { Bar, Doughnut, Line } from 'react-chartjs-2';
+import { FaBrain, FaUpload, FaChartLine, FaShieldAlt, FaHistory, FaMicroscope, FaHeartbeat, FaCheckCircle, FaTimesCircle, FaInfoCircle } from 'react-icons/fa';
 import './App.css';
+
+// Register ChartJS components
+ChartJS.register(
+  CategoryScale,
+  LinearScale,
+  BarElement,
+  Title,
+  Tooltip,
+  Legend,
+  ArcElement,
+  PointElement,
+  LineElement,
+  Filler
+);
 
 const API_URL = 'http://localhost:5000';
 
 function App() {
-    const [selectedFile, setSelectedFile] = useState(null);
-    const [preview, setPreview] = useState(null);
-    const [loading, setLoading] = useState(false);
-    const [result, setResult] = useState(null);
-    const [viewMode, setViewMode] = useState('original'); // original, overlay, heatmap
-    const [systemStatus, setSystemStatus] = useState('ready');
-    const [processingSteps, setProcessingSteps] = useState({
-        loaded: false,
-        preprocessing: false,
-        analysis: false,
-        report: false
-    });
+  const [image, setImage] = useState(null);
+  const [preview, setPreview] = useState(null);
+  const [result, setResult] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const [history, setHistory] = useState([]);
+  const [showHistory, setShowHistory] = useState(false);
+  const [animatedConfidence, setAnimatedConfidence] = useState(0);
+  const [systemStatus, setSystemStatus] = useState('checking');
 
-    // Check API health on mount
-    React.useEffect(() => {
-        checkSystemHealth();
-    }, []);
+  // Check system health on mount
+  useEffect(() => {
+    checkSystemHealth();
+  }, []);
 
-    const checkSystemHealth = async () => {
-        try {
-            const response = await axios.get(`${API_URL}/api/health`);
-            setSystemStatus(response.data.status === 'healthy' ? 'ready' : 'offline');
-        } catch (error) {
-            setSystemStatus('offline');
+  const checkSystemHealth = async () => {
+    try {
+      const response = await axios.get(`${API_URL}/api/health`);
+      setSystemStatus(response.data.status === 'healthy' ? 'online' : 'offline');
+    } catch (err) {
+      setSystemStatus('offline');
+    }
+  };
+
+  // Animate confidence when result changes
+  useEffect(() => {
+    if (result && result.success) {
+      const targetConfidence = result.confidence;
+      let current = 0;
+      const increment = targetConfidence / 50;
+      const timer = setInterval(() => {
+        current += increment;
+        if (current >= targetConfidence) {
+          setAnimatedConfidence(targetConfidence);
+          clearInterval(timer);
+        } else {
+          setAnimatedConfidence(current);
         }
-    };
+      }, 20);
+      return () => clearInterval(timer);
+    }
+  }, [result]);
 
-    const onDrop = useCallback((acceptedFiles) => {
-        const file = acceptedFiles[0];
-        if (file) {
-            setSelectedFile(file);
-            setResult(null);
-            setProcessingSteps({
-                loaded: true,
-                preprocessing: false,
-                analysis: false,
-                report: false
-            });
+  const onDrop = useCallback((acceptedFiles) => {
+    const file = acceptedFiles[0];
+    if (file) {
+      setImage(file);
+      const reader = new FileReader();
+      reader.onloadend = () => setPreview(reader.result);
+      reader.readAsDataURL(file);
+      setResult(null);
+      setError(null);
+      setAnimatedConfidence(0);
+    }
+  }, []);
 
-            // Create preview
-            const reader = new FileReader();
-            reader.onloadend = () => {
-                setPreview(reader.result);
-            };
-            reader.readAsDataURL(file);
-        }
-    }, []);
+  const { getRootProps, getInputProps, isDragActive } = useDropzone({
+    onDrop,
+    accept: { 'image/*': ['.jpeg', '.jpg', '.png'] },
+    multiple: false,
+  });
 
-    const { getRootProps, getInputProps, isDragActive } = useDropzone({
-        onDrop,
-        accept: {
-            'image/*': ['.png', '.jpg', '.jpeg', '.bmp', '.tiff']
+  const analyzeImage = async () => {
+    if (!image) return;
+
+    setLoading(true);
+    setError(null);
+
+    const formData = new FormData();
+    formData.append('file', image);
+
+    try {
+      const response = await axios.post(`${API_URL}/api/predict`, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+
+      const newResult = response.data;
+      setResult(newResult);
+
+      if (newResult.success) {
+        // Add to history
+        const historyItem = {
+          id: Date.now(),
+          timestamp: new Date().toLocaleString(),
+          prediction: newResult.predicted_class,
+          confidence: newResult.confidence,
+          preview: preview,
+          probabilities: newResult.all_probabilities,
+        };
+        setHistory((prev) => [historyItem, ...prev.slice(0, 9)]);
+      }
+    } catch (err) {
+      setError(err.response?.data?.error || 'Analysis failed. Please ensure the server is running.');
+      setResult({ success: false, error: err.response?.data?.error || 'Analysis failed' });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const resetAnalysis = () => {
+    setImage(null);
+    setPreview(null);
+    setResult(null);
+    setError(null);
+    setAnimatedConfidence(0);
+  };
+
+  // Chart configurations
+  const getBarChartData = () => {
+    if (!result?.all_probabilities) return null;
+    
+    const labels = Object.keys(result.all_probabilities);
+    const data = Object.values(result.all_probabilities);
+    
+    return {
+      labels: labels.map(l => formatClassName(l)),
+      datasets: [
+        {
+          label: 'Probability (%)',
+          data: data,
+          backgroundColor: [
+            'rgba(16, 185, 129, 0.85)',
+            'rgba(59, 130, 246, 0.85)',
+            'rgba(245, 158, 11, 0.85)',
+            'rgba(239, 68, 68, 0.85)',
+          ],
+          borderColor: [
+            'rgb(16, 185, 129)',
+            'rgb(59, 130, 246)',
+            'rgb(245, 158, 11)',
+            'rgb(239, 68, 68)',
+          ],
+          borderWidth: 2,
+          borderRadius: 8,
         },
-        multiple: false
-    });
-
-    const handlePredict = async () => {
-        if (!selectedFile) {
-            alert('Please load an MRI scan first');
-            return;
-        }
-
-        setLoading(true);
-        setResult(null);
-
-        // Update processing steps
-        setProcessingSteps({
-            loaded: true,
-            preprocessing: true,
-            analysis: false,
-            report: false
-        });
-
-        try {
-            const formData = new FormData();
-            formData.append('file', selectedFile);
-
-            const response = await axios.post(`${API_URL}/api/predict`, formData, {
-                headers: {
-                    'Content-Type': 'multipart/form-data',
-                },
-            });
-
-            setResult(response.data);
-
-            // Complete all steps
-            setProcessingSteps({
-                loaded: true,
-                preprocessing: true,
-                analysis: true,
-                report: true
-            });
-        } catch (error) {
-            console.error('Error:', error);
-            setResult({
-                success: false,
-                error: error.response?.data?.error || 'Analysis failed. Please verify the image format and try again.'
-            });
-
-            setProcessingSteps({
-                loaded: true,
-                preprocessing: true,
-                analysis: false,
-                report: false
-            });
-        } finally {
-            setLoading(false);
-        }
+      ],
     };
+  };
 
-    const handleClear = () => {
-        setSelectedFile(null);
-        setPreview(null);
-        setResult(null);
-        setProcessingSteps({
-            loaded: false,
-            preprocessing: false,
-            analysis: false,
-            report: false
-        });
+  const getDoughnutData = () => {
+    if (!result?.all_probabilities) return null;
+    
+    return {
+      labels: Object.keys(result.all_probabilities).map(l => formatClassName(l)),
+      datasets: [
+        {
+          data: Object.values(result.all_probabilities),
+          backgroundColor: [
+            'rgba(16, 185, 129, 0.9)',
+            'rgba(59, 130, 246, 0.9)',
+            'rgba(245, 158, 11, 0.9)',
+            'rgba(239, 68, 68, 0.9)',
+          ],
+          borderColor: '#ffffff',
+          borderWidth: 3,
+          hoverOffset: 10,
+        },
+      ],
     };
+  };
 
-    const formatClassName = (className) => {
-        return className.split('_').map(word =>
-            word.charAt(0).toUpperCase() + word.slice(1)
-        ).join(' ');
+  const getLineChartData = () => {
+    if (history.length === 0) return null;
+    
+    const recentHistory = history.slice(0, 7).reverse();
+    
+    return {
+      labels: recentHistory.map((_, i) => `Scan ${i + 1}`),
+      datasets: [
+        {
+          label: 'Confidence Trend (%)',
+          data: recentHistory.map(h => h.confidence),
+          fill: true,
+          borderColor: 'rgb(16, 185, 129)',
+          backgroundColor: 'rgba(16, 185, 129, 0.15)',
+          tension: 0.4,
+          pointBackgroundColor: 'rgb(16, 185, 129)',
+          pointBorderColor: '#fff',
+          pointBorderWidth: 2,
+          pointRadius: 6,
+          pointHoverRadius: 8,
+        },
+      ],
     };
+  };
 
-    const getRiskLevel = (className, confidence) => {
-        if (className === 'no_tumor') return 'Normal';
-        if (confidence >= 80) return 'High Confidence';
-        if (confidence >= 60) return 'Moderate Confidence';
-        return 'Low Confidence';
+  const chartOptions = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: {
+        display: false,
+      },
+      tooltip: {
+        backgroundColor: 'rgba(0, 0, 0, 0.8)',
+        titleFont: { size: 14, weight: 'bold' },
+        bodyFont: { size: 13 },
+        padding: 12,
+        cornerRadius: 8,
+        callbacks: {
+          label: (context) => `${context.parsed.y.toFixed(1)}%`,
+        },
+      },
+    },
+    scales: {
+      y: {
+        beginAtZero: true,
+        max: 100,
+        grid: { color: 'rgba(0, 0, 0, 0.06)' },
+        ticks: { 
+          color: '#64748b',
+          font: { size: 11 },
+          callback: (value) => value + '%',
+        },
+      },
+      x: {
+        grid: { display: false },
+        ticks: { 
+          color: '#64748b',
+          font: { size: 11, weight: '500' },
+        },
+      },
+    },
+  };
+
+  const lineChartOptions = {
+    ...chartOptions,
+    plugins: {
+      ...chartOptions.plugins,
+      legend: {
+        display: true,
+        position: 'top',
+        labels: {
+          padding: 20,
+          font: { size: 12, weight: '500' },
+          color: '#374151',
+          usePointStyle: true,
+        },
+      },
+    },
+  };
+
+  const doughnutOptions = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: {
+        position: 'bottom',
+        labels: {
+          padding: 20,
+          font: { size: 12, weight: '500' },
+          color: '#374151',
+          usePointStyle: true,
+        },
+      },
+      tooltip: {
+        backgroundColor: 'rgba(0, 0, 0, 0.8)',
+        titleFont: { size: 14, weight: 'bold' },
+        bodyFont: { size: 13 },
+        padding: 12,
+        cornerRadius: 8,
+        callbacks: {
+          label: (context) => `${context.label}: ${context.parsed.toFixed(1)}%`,
+        },
+      },
+    },
+    cutout: '60%',
+  };
+
+  const formatClassName = (name) => {
+    if (name === 'notumor') return 'No Tumor';
+    return name.charAt(0).toUpperCase() + name.slice(1);
+  };
+
+  const getTumorInfo = (prediction) => {
+    const info = {
+      glioma: {
+        severity: 'High',
+        color: '#EF4444',
+        bgColor: 'rgba(239, 68, 68, 0.1)',
+        description: 'Gliomas are tumors that arise from glial cells in the brain or spine. They are the most common type of primary brain tumor.',
+        recommendation: 'Immediate consultation with a neuro-oncologist is strongly recommended for further evaluation and treatment planning.',
+        icon: '⚠️',
+      },
+      meningioma: {
+        severity: 'Moderate',
+        color: '#F59E0B',
+        bgColor: 'rgba(245, 158, 11, 0.1)',
+        description: 'Meningiomas are tumors that form on membranes covering the brain and spinal cord. Most are slow-growing and benign.',
+        recommendation: 'Schedule a follow-up MRI and consult with a neurosurgeon for monitoring and treatment options.',
+        icon: '⚡',
+      },
+      pituitary: {
+        severity: 'Moderate',
+        color: '#3B82F6',
+        bgColor: 'rgba(59, 130, 246, 0.1)',
+        description: 'Pituitary tumors are abnormal growths in the pituitary gland. Most are non-cancerous (benign) adenomas.',
+        recommendation: 'Endocrinological evaluation recommended along with regular monitoring through MRI scans.',
+        icon: '📋',
+      },
+      notumor: {
+        severity: 'None',
+        color: '#10B981',
+        bgColor: 'rgba(16, 185, 129, 0.1)',
+        description: 'No tumor detected in the MRI scan. The brain tissue appears normal in this analysis.',
+        recommendation: 'Continue regular health check-ups and maintain a healthy lifestyle.',
+        icon: '✅',
+      },
     };
+    return info[prediction?.toLowerCase()] || info.notumor;
+  };
 
-    const getStatusIcon = (step) => {
-        if (!processingSteps[step]) return '○';
-        if (loading && step === 'preprocessing') return '⏳';
-        if (loading && step === 'analysis') return '⏳';
-        if (loading && step === 'report') return '⏳';
-        return '✓';
-    };
+  const getConfidenceLevel = (conf) => {
+    if (conf >= 90) return { text: 'Very High', color: '#10b981' };
+    if (conf >= 75) return { text: 'High', color: '#3b82f6' };
+    if (conf >= 60) return { text: 'Moderate', color: '#f59e0b' };
+    return { text: 'Low', color: '#ef4444' };
+  };
 
-    return (
-        <div className="clinical-app">
-            {/* Clinical Header Bar */}
-            <header className="clinical-header">
-                <div className="header-left">
-                    <div className="system-logo">
-                        <span className="brain-icon">🧠</span>
-                        <div className="system-title">
-                            <h1>NeuroVision AI</h1>
-                            <span className="subtitle">MRI Tumor Analysis Assistant</span>
-                        </div>
-                    </div>
-                </div>
-                <div className="header-right">
-                    <div className="system-info">
-                        <div className="info-item">
-                            <span className="info-label">System Version:</span>
-                            <span className="info-value">v1.0 Clinical Prototype</span>
-                        </div>
-                        <div className="info-item">
-                            <span className="info-label">Model:</span>
-                            <span className="info-value">EfficientNet-B4 Based CNN</span>
-                        </div>
-                        <div className="info-item">
-                            <span className="info-label">Status:</span>
-                            <span className={`status-indicator ${systemStatus}`}>
-                                {systemStatus === 'ready' ? '● System Ready' : '● System Offline'}
-                            </span>
-                        </div>
-                    </div>
-                </div>
-            </header>
-
-            {/* Main Clinical Dashboard */}
-            <div className="clinical-dashboard">
-                {/* Left Panel - Study Information */}
-                <div className="study-panel">
-                    <div className="panel-section">
-                        <h2 className="panel-title">Study Information</h2>
-
-                        {/* Upload Section */}
-                        <div className="section-block">
-                            <h3 className="section-subtitle">Upload MRI Scan</h3>
-                            {!preview ? (
-                                <div
-                                    {...getRootProps()}
-                                    className={`clinical-dropzone ${isDragActive ? 'active' : ''}`}
-                                >
-                                    <input {...getInputProps()} />
-                                    <div className="dropzone-content">
-                                        <div className="upload-icon">📁</div>
-                                        <p className="dropzone-text">Drag & Drop MRI Image</p>
-                                        <button className="btn-clinical">Browse Files</button>
-                                        <p className="file-types">PNG, JPG, JPEG, BMP, TIFF</p>
-                                    </div>
-                                </div>
-                            ) : (
-                                <div className="file-loaded">
-                                    <div className="file-info-row">
-                                        <span className="label">Filename:</span>
-                                        <span className="value">{selectedFile?.name}</span>
-                                    </div>
-                                    <div className="file-info-row">
-                                        <span className="label">Size:</span>
-                                        <span className="value">{(selectedFile?.size / 1024).toFixed(2)} KB</span>
-                                    </div>
-                                    <div className="file-info-row">
-                                        <span className="label">Type:</span>
-                                        <span className="value">{selectedFile?.type || 'Image'}</span>
-                                    </div>
-                                </div>
-                            )}
-                        </div>
-
-                        {/* Scan Metadata */}
-                        <div className="section-block">
-                            <h3 className="section-subtitle">Scan Metadata</h3>
-                            <div className="metadata-grid">
-                                <div className="metadata-item">
-                                    <span className="meta-label">Study ID:</span>
-                                    <span className="meta-value">{selectedFile ? 'MRI-' + Date.now().toString().slice(-6) : '—'}</span>
-                                </div>
-                                <div className="metadata-item">
-                                    <span className="meta-label">Scan Type:</span>
-                                    <span className="meta-value">Brain MRI</span>
-                                </div>
-                                <div className="metadata-item">
-                                    <span className="meta-label">Date:</span>
-                                    <span className="meta-value">{new Date().toLocaleDateString()}</span>
-                                </div>
-                                <div className="metadata-item">
-                                    <span className="meta-label">Image Dimensions:</span>
-                                    <span className="meta-value">{selectedFile ? 'Auto-detected' : '—'}</span>
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* Processing Status */}
-                        <div className="section-block">
-                            <h3 className="section-subtitle">Processing Status</h3>
-                            <div className="status-steps">
-                                <div className={`status-step ${processingSteps.loaded ? 'completed' : ''}`}>
-                                    <span className="step-icon">{getStatusIcon('loaded')}</span>
-                                    <span>Image Loaded</span>
-                                </div>
-                                <div className={`status-step ${processingSteps.preprocessing ? 'completed' : ''} ${loading && processingSteps.loaded ? 'active' : ''}`}>
-                                    <span className="step-icon">{getStatusIcon('preprocessing')}</span>
-                                    <span>Preprocessing</span>
-                                </div>
-                                <div className={`status-step ${processingSteps.analysis ? 'completed' : ''} ${loading && processingSteps.preprocessing ? 'active' : ''}`}>
-                                    <span className="step-icon">{getStatusIcon('analysis')}</span>
-                                    <span>AI Analysis</span>
-                                </div>
-                                <div className={`status-step ${processingSteps.report ? 'completed' : ''} ${loading && processingSteps.analysis ? 'active' : ''}`}>
-                                    <span className="step-icon">{getStatusIcon('report')}</span>
-                                    <span>Report Generation</span>
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* Action Buttons */}
-                        <div className="action-buttons">
-                            <button
-                                className="btn-primary-clinical"
-                                onClick={handlePredict}
-                                disabled={!selectedFile || loading}
-                            >
-                                {loading ? 'Analyzing...' : 'Start Analysis'}
-                            </button>
-                            <button
-                                className="btn-secondary-clinical"
-                                onClick={handleClear}
-                                disabled={loading}
-                            >
-                                Clear Study
-                            </button>
-                        </div>
-                    </div>
-                </div>
-
-                {/* Right Panel - MRI Viewer & Analysis */}
-                <div className="viewer-panel">
-                    {/* MRI Viewer */}
-                    <div className="panel-section">
-                        <div className="section-header">
-                            <h2 className="panel-title">MRI Scan & AI Visualization</h2>
-                            {preview && (
-                                <div className="view-controls">
-                                    <button
-                                        className={`view-btn ${viewMode === 'original' ? 'active' : ''}`}
-                                        onClick={() => setViewMode('original')}
-                                    >
-                                        Original
-                                    </button>
-                                    <button
-                                        className={`view-btn ${viewMode === 'overlay' ? 'active' : ''}`}
-                                        onClick={() => setViewMode('overlay')}
-                                        disabled={!result?.success}
-                                    >
-                                        AI Overlay
-                                    </button>
-                                    <button
-                                        className={`view-btn ${viewMode === 'heatmap' ? 'active' : ''}`}
-                                        onClick={() => setViewMode('heatmap')}
-                                        disabled={!result?.success}
-                                    >
-                                        Heatmap
-                                    </button>
-                                </div>
-                            )}
-                        </div>
-
-                        <div className="mri-viewer">
-                            {!preview ? (
-                                <div className="viewer-placeholder">
-                                    <div className="placeholder-icon">🖼️</div>
-                                    <p>No MRI scan loaded</p>
-                                    <p className="placeholder-hint">Upload an image to begin analysis</p>
-                                </div>
-                            ) : (
-                                <div className="mri-display">
-                                    <img src={preview} alt="MRI Scan" className="mri-image" />
-                                    {result?.success && viewMode === 'overlay' && (
-                                        <div className="ai-overlay">
-                                            <div className="overlay-label">AI Detection Overlay</div>
-                                        </div>
-                                    )}
-                                </div>
-                            )}
-                        </div>
-
-                        {result?.success && (
-                            <div className="confidence-indicator">
-                                <div className="confidence-label">Prediction Confidence</div>
-                                <div className="confidence-bar-wrapper">
-                                    <div
-                                        className="confidence-bar-fill"
-                                        style={{ width: `${result.confidence}%` }}
-                                    >
-                                        <span className="confidence-text">{result.confidence}%</span>
-                                    </div>
-                                </div>
-                            </div>
-                        )}
-                    </div>
-
-                    {/* AI Findings Panel */}
-                    {result && (
-                        <div className="panel-section findings-panel">
-                            <h2 className="panel-title">AI Analysis Summary</h2>
-
-                            {result.success ? (
-                                <>
-                                    {/* Detection Outcome */}
-                                    <div className="findings-section">
-                                        <h3 className="findings-subtitle">Detection Outcome</h3>
-                                        <div className="findings-grid">
-                                            <div className="finding-item">
-                                                <span className="finding-label">Predicted Class:</span>
-                                                <span className="finding-value highlight">{formatClassName(result.predicted_class)}</span>
-                                            </div>
-                                            <div className="finding-item">
-                                                <span className="finding-label">Abnormality Detected:</span>
-                                                <span className="finding-value">{result.predicted_class === 'no_tumor' ? 'No' : 'Yes'}</span>
-                                            </div>
-                                            <div className="finding-item">
-                                                <span className="finding-label">Confidence Score:</span>
-                                                <span className="finding-value">{result.confidence}%</span>
-                                            </div>
-                                            <div className="finding-item">
-                                                <span className="finding-label">Risk Indicator:</span>
-                                                <span className={`finding-value risk-${getRiskLevel(result.predicted_class, result.confidence).toLowerCase().replace(' ', '-')}`}>
-                                                    {getRiskLevel(result.predicted_class, result.confidence)}
-                                                </span>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    {/* Class Probabilities */}
-                                    <div className="findings-section">
-                                        <h3 className="findings-subtitle">Class Probability Distribution</h3>
-                                        <div className="probability-chart">
-                                            {Object.entries(result.all_probabilities).map(([className, probability]) => (
-                                                <div key={className} className="probability-row">
-                                                    <span className="prob-label">{formatClassName(className)}</span>
-                                                    <div className="prob-bar-container">
-                                                        <div
-                                                            className="prob-bar"
-                                                            style={{ width: `${probability}%` }}
-                                                        ></div>
-                                                        <span className="prob-value">{probability.toFixed(1)}%</span>
-                                                    </div>
-                                                </div>
-                                            ))}
-                                        </div>
-                                    </div>
-
-                                    {/* Medical Report */}
-                                    <div className="findings-section">
-                                        <h3 className="findings-subtitle">Preliminary AI Report</h3>
-                                        <div className="medical-report">
-                                            <p className="report-text">
-                                                {result.predicted_class === 'no_tumor'
-                                                    ? `AI-based analysis suggests no significant intracranial lesion detected. The scan appears within normal parameters based on the algorithmic assessment.`
-                                                    : `AI-based analysis suggests the presence of a suspicious intracranial lesion consistent with ${formatClassName(result.predicted_class)}.`
-                                                }
-                                            </p>
-                                            <p className="report-text">
-                                                Model confidence: {result.confidence}%
-                                            </p>
-                                            <p className="report-disclaimer">
-                                                This output is intended as a clinical decision support tool and must be reviewed by a qualified radiologist.
-                                            </p>
-                                        </div>
-                                        <div className="report-actions">
-                                            <button className="btn-report" disabled>
-                                                📄 Generate PDF Report
-                                            </button>
-                                            <button className="btn-report" disabled>
-                                                💾 Export Findings
-                                            </button>
-                                        </div>
-                                    </div>
-                                </>
-                            ) : (
-                                <div className="error-message">
-                                    <div className="error-icon">⚠️</div>
-                                    <p className="error-text">Analysis Failed</p>
-                                    <p className="error-detail">{result.error}</p>
-                                </div>
-                            )}
-                        </div>
-                    )}
-                </div>
+  return (
+    <div className="app">
+      {/* Header */}
+      <header className="header">
+        <div className="header-content">
+          <div className="logo">
+            <div className="logo-icon">
+              <FaBrain />
             </div>
-
-            {/* Medical Disclaimer */}
-            <div className="clinical-disclaimer">
-                <div className="disclaimer-content">
-                    <div className="disclaimer-header">
-                        <span className="disclaimer-icon">⚠️</span>
-                        <h3>Clinical Decision Support Only</h3>
-                    </div>
-                    <p className="disclaimer-text">
-                        This system does not provide a medical diagnosis. Results are algorithmic predictions based on
-                        deep learning models and must be reviewed by a licensed medical professional. This tool is
-                        intended for research and clinical decision support purposes only. Do not use this system as
-                        the sole basis for diagnostic or treatment decisions.
-                    </p>
-                </div>
+            <div className="logo-text">
+              <h1>NeuroScan AI</h1>
+              <span>Advanced Brain Tumor Detection</span>
             </div>
-
-            {/* Footer */}
-            <footer className="clinical-footer">
-                <div className="footer-content">
-                    <span>NeuroVision AI Clinical Prototype v1.0</span>
-                    <span>•</span>
-                    <span>EfficientNet-B4 Deep Learning Model</span>
-                    <span>•</span>
-                    <span>For Research & Educational Use</span>
-                </div>
-            </footer>
+          </div>
+          <nav className="nav-links">
+            <button 
+              className={`nav-btn ${!showHistory ? 'active' : ''}`}
+              onClick={() => setShowHistory(false)}
+            >
+              <FaMicroscope /> Analysis
+            </button>
+            <button 
+              className={`nav-btn ${showHistory ? 'active' : ''}`}
+              onClick={() => setShowHistory(true)}
+            >
+              <FaHistory /> History ({history.length})
+            </button>
+            <div className={`status-indicator ${systemStatus}`}>
+              <span className="status-dot"></span>
+              {systemStatus === 'online' ? 'System Online' : systemStatus === 'checking' ? 'Connecting...' : 'Offline'}
+            </div>
+          </nav>
         </div>
-    );
+      </header>
+
+      <main className="main-content">
+        {!showHistory ? (
+          <>
+            {/* Stats Banner */}
+            <div className="stats-banner">
+              <div className="stat-card">
+                <div className="stat-icon-wrapper green">
+                  <FaShieldAlt className="stat-icon" />
+                </div>
+                <div className="stat-info">
+                  <span className="stat-value">96.95%</span>
+                  <span className="stat-label">Model Accuracy</span>
+                </div>
+              </div>
+              <div className="stat-card">
+                <div className="stat-icon-wrapper blue">
+                  <FaChartLine className="stat-icon" />
+                </div>
+                <div className="stat-info">
+                  <span className="stat-value">4</span>
+                  <span className="stat-label">Detection Classes</span>
+                </div>
+              </div>
+              <div className="stat-card">
+                <div className="stat-icon-wrapper purple">
+                  <FaHeartbeat className="stat-icon" />
+                </div>
+                <div className="stat-info">
+                  <span className="stat-value">{history.length}</span>
+                  <span className="stat-label">Scans Analyzed</span>
+                </div>
+              </div>
+              <div className="stat-card">
+                <div className="stat-icon-wrapper orange">
+                  <FaBrain className="stat-icon" />
+                </div>
+                <div className="stat-info">
+                  <span className="stat-value">MobileNetV2</span>
+                  <span className="stat-label">AI Architecture</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Main Analysis Section */}
+            <div className="analysis-section">
+              {/* Upload Panel */}
+              <div className="panel upload-panel">
+                <div className="panel-header">
+                  <h2><FaUpload /> Upload MRI Scan</h2>
+                  <span className="panel-subtitle">Drag & drop or click to upload</span>
+                </div>
+                <div className="panel-content">
+                  <div
+                    {...getRootProps()}
+                    className={`dropzone ${isDragActive ? 'active' : ''} ${preview ? 'has-image' : ''}`}
+                  >
+                    <input {...getInputProps()} />
+                    {preview ? (
+                      <div className="preview-container">
+                        <img src={preview} alt="MRI Preview" className="preview-image" />
+                        {loading && (
+                          <div className="scanning-overlay">
+                            <div className="scan-line"></div>
+                            <span>Analyzing...</span>
+                          </div>
+                        )}
+                        <div className="preview-overlay">
+                          <span>Click or drag to replace</span>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="dropzone-content">
+                        <div className="dropzone-icon">
+                          <FaBrain />
+                        </div>
+                        <p className="dropzone-text">
+                          {isDragActive ? 'Drop the MRI scan here' : 'Drag & drop an MRI scan'}
+                        </p>
+                        <span className="dropzone-hint">or click to browse files</span>
+                        <span className="dropzone-formats">Supports: JPG, JPEG, PNG</span>
+                      </div>
+                    )}
+                  </div>
+
+                  {image && (
+                    <div className="file-info">
+                      <span className="file-name">{image.name}</span>
+                      <span className="file-size">{(image.size / 1024).toFixed(1)} KB</span>
+                    </div>
+                  )}
+
+                  <div className="action-buttons">
+                    <button
+                      className="btn btn-primary"
+                      onClick={analyzeImage}
+                      disabled={!image || loading}
+                    >
+                      {loading ? (
+                        <>
+                          <span className="spinner"></span>
+                          Analyzing...
+                        </>
+                      ) : (
+                        <>
+                          <FaMicroscope /> Analyze Scan
+                        </>
+                      )}
+                    </button>
+                    {(image || result) && (
+                      <button className="btn btn-secondary" onClick={resetAnalysis}>
+                        Reset
+                      </button>
+                    )}
+                  </div>
+
+                  {error && (
+                    <div className="error-message">
+                      <FaTimesCircle /> {error}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Results Panel */}
+              <div className="panel results-panel">
+                <div className="panel-header">
+                  <h2><FaChartLine /> Analysis Results</h2>
+                  <span className="panel-subtitle">AI-powered diagnosis</span>
+                </div>
+                <div className="panel-content">
+                  {result && result.success ? (
+                    <div className="results-content">
+                      {/* Diagnosis Card */}
+                      <div 
+                        className="diagnosis-card"
+                        style={{ 
+                          borderLeftColor: getTumorInfo(result.predicted_class).color,
+                          backgroundColor: getTumorInfo(result.predicted_class).bgColor,
+                        }}
+                      >
+                        <div className="diagnosis-header">
+                          <span className="diagnosis-icon">{getTumorInfo(result.predicted_class).icon}</span>
+                          <span 
+                            className="severity-badge"
+                            style={{ backgroundColor: getTumorInfo(result.predicted_class).color }}
+                          >
+                            {getTumorInfo(result.predicted_class).severity} Risk
+                          </span>
+                        </div>
+                        <h3 className="diagnosis-title" style={{ color: getTumorInfo(result.predicted_class).color }}>
+                          {formatClassName(result.predicted_class)}
+                        </h3>
+                        <p className="diagnosis-description">
+                          {getTumorInfo(result.predicted_class).description}
+                        </p>
+                      </div>
+
+                      {/* Confidence Meter */}
+                      <div className="confidence-section">
+                        <div className="confidence-header">
+                          <span>Confidence Level</span>
+                          <div className="confidence-stats">
+                            <span 
+                              className="confidence-level-badge"
+                              style={{ color: getConfidenceLevel(result.confidence).color }}
+                            >
+                              {getConfidenceLevel(result.confidence).text}
+                            </span>
+                            <span className="confidence-value">{animatedConfidence.toFixed(1)}%</span>
+                          </div>
+                        </div>
+                        <div className="confidence-bar">
+                          <div 
+                            className="confidence-fill"
+                            style={{ 
+                              width: `${animatedConfidence}%`,
+                              backgroundColor: getTumorInfo(result.predicted_class).color
+                            }}
+                          >
+                            <div className="confidence-glow"></div>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Recommendation */}
+                      <div className="recommendation-card">
+                        <FaCheckCircle className="rec-icon" style={{ color: getTumorInfo(result.predicted_class).color }} />
+                        <div>
+                          <strong>Clinical Recommendation</strong>
+                          <p>{getTumorInfo(result.predicted_class).recommendation}</p>
+                        </div>
+                      </div>
+
+                      {/* Disclaimer */}
+                      <div className="disclaimer">
+                        <FaInfoCircle />
+                        <span><strong>Disclaimer:</strong> This AI analysis is for educational purposes only. Always consult qualified medical professionals for diagnosis.</span>
+                      </div>
+                    </div>
+                  ) : result && !result.success ? (
+                    <div className="error-result">
+                      <FaTimesCircle className="error-icon" />
+                      <h3>Analysis Failed</h3>
+                      <p>{result.error}</p>
+                    </div>
+                  ) : (
+                    <div className="no-results">
+                      <FaBrain className="no-results-icon" />
+                      <h3>Ready for Analysis</h3>
+                      <p>Upload an MRI scan to begin AI-powered tumor detection</p>
+                      <div className="no-results-features">
+                        <span><FaCheckCircle /> 4 Tumor Types</span>
+                        <span><FaCheckCircle /> 96.95% Accuracy</span>
+                        <span><FaCheckCircle /> Instant Results</span>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Charts Section */}
+            {result && result.success && (
+              <div className="charts-section">
+                <div className="panel chart-panel">
+                  <div className="panel-header">
+                    <h2><FaChartLine /> Probability Distribution</h2>
+                    <span className="panel-subtitle">Bar chart showing all class probabilities</span>
+                  </div>
+                  <div className="chart-container bar-chart">
+                    {getBarChartData() && <Bar data={getBarChartData()} options={chartOptions} />}
+                  </div>
+                </div>
+
+                <div className="panel chart-panel">
+                  <div className="panel-header">
+                    <h2>Classification Breakdown</h2>
+                    <span className="panel-subtitle">Proportional view of predictions</span>
+                  </div>
+                  <div className="chart-container doughnut-chart">
+                    {getDoughnutData() && <Doughnut data={getDoughnutData()} options={doughnutOptions} />}
+                  </div>
+                </div>
+
+                {history.length >= 2 && (
+                  <div className="panel chart-panel wide">
+                    <div className="panel-header">
+                      <h2>Confidence Trend Analysis</h2>
+                      <span className="panel-subtitle">Historical confidence tracking across scans</span>
+                    </div>
+                    <div className="chart-container line-chart">
+                      {getLineChartData() && <Line data={getLineChartData()} options={lineChartOptions} />}
+                    </div>
+                  </div>
+                )}
+
+                {/* Detailed Probabilities Table */}
+                <div className="panel chart-panel wide">
+                  <div className="panel-header">
+                    <h2>Detailed Analysis</h2>
+                    <span className="panel-subtitle">Complete probability breakdown</span>
+                  </div>
+                  <div className="probabilities-table">
+                    {Object.entries(result.all_probabilities)
+                      .sort(([,a], [,b]) => b - a)
+                      .map(([cls, prob], index) => (
+                        <div 
+                          key={cls} 
+                          className={`prob-row ${cls === result.predicted_class ? 'highlighted' : ''}`}
+                        >
+                          <div className="prob-rank">#{index + 1}</div>
+                          <div className="prob-name">{formatClassName(cls)}</div>
+                          <div className="prob-bar-container">
+                            <div 
+                              className="prob-bar-fill"
+                              style={{ 
+                                width: `${prob}%`,
+                                backgroundColor: cls === result.predicted_class 
+                                  ? getTumorInfo(cls).color 
+                                  : '#94a3b8'
+                              }}
+                            ></div>
+                          </div>
+                          <div className="prob-value">{prob.toFixed(2)}%</div>
+                        </div>
+                      ))}
+                  </div>
+                </div>
+              </div>
+            )}
+          </>
+        ) : (
+          /* History Section */
+          <div className="history-section">
+            <div className="panel history-panel">
+              <div className="panel-header">
+                <h2><FaHistory /> Scan History</h2>
+                <span className="panel-subtitle">Recent analysis records</span>
+              </div>
+              <div className="panel-content">
+                {history.length > 0 ? (
+                  <div className="history-grid">
+                    {history.map((item) => (
+                      <div key={item.id} className="history-card">
+                        <img src={item.preview} alt="Scan" className="history-image" />
+                        <div className="history-info">
+                          <span 
+                            className="history-diagnosis"
+                            style={{ color: getTumorInfo(item.prediction).color }}
+                          >
+                            {formatClassName(item.prediction)}
+                          </span>
+                          <div className="history-meta">
+                            <span className="history-confidence">{item.confidence.toFixed(1)}%</span>
+                            <span 
+                              className="history-severity"
+                              style={{ backgroundColor: getTumorInfo(item.prediction).color }}
+                            >
+                              {getTumorInfo(item.prediction).severity}
+                            </span>
+                          </div>
+                          <span className="history-time">{item.timestamp}</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="no-history">
+                    <FaHistory className="no-history-icon" />
+                    <h3>No Scan History</h3>
+                    <p>Analyzed scans will appear here</p>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* History Stats Chart */}
+            {history.length >= 2 && (
+              <div className="panel chart-panel wide">
+                <div className="panel-header">
+                  <h2>Confidence Trend</h2>
+                  <span className="panel-subtitle">Historical confidence analysis</span>
+                </div>
+                <div className="chart-container line-chart">
+                  {getLineChartData() && <Line data={getLineChartData()} options={lineChartOptions} />}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+      </main>
+
+      {/* Footer */}
+      <footer className="footer">
+        <div className="footer-content">
+          <div className="footer-brand">
+            <FaBrain className="footer-icon" />
+            <span>NeuroScan AI</span>
+          </div>
+          <p className="footer-text">
+            Advanced Brain Tumor Detection System • Deep Learning Powered • Educational Project
+          </p>
+          <p className="footer-disclaimer">
+            This tool is for educational purposes only and should not replace professional medical diagnosis.
+          </p>
+        </div>
+      </footer>
+    </div>
+  );
 }
 
 export default App;

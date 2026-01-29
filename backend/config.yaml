@@ -56,12 +56,12 @@ api:
   max_file_size: 16777216 # 16MB
   allowed_extensions: ["png", "jpg", "jpeg", "bmp", "tiff"]
 
-# Class Labels
+# Class Labels (must match data folder names exactly)
 classes:
   - "glioma"
   - "meningioma"
+  - "notumor"
   - "pituitary"
-  - "no_tumor"
 
 # Confidence Threshold
 prediction:

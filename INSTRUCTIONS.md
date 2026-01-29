@@ -1,306 +1,316 @@
-# How to Run the Brain Tumor Detection Project
+# 🧠 NeuroScan AI - Brain Tumor Detection
 
-**For B.Tech Students - Simple Step-by-Step Guide**
+## Complete Setup & Usage Guide
 
-This guide will help you run the project on your computer. No technical knowledge required.
+**For Students & Developers - Step-by-Step Instructions**
 
----
-
-## Step 1: Install Required Software
-
-You need to install 3 programs on your computer:
-
-### 1.1 Install Python
-
-Python is needed to run the AI model.
-
-1. Go to: https://www.python.org/downloads/
-2. Download Python (version 3.8 or higher)
-3. **IMPORTANT**: During installation, check the box that says "Add Python to PATH"
-4. Click "Install Now"
-5. Wait for installation to complete
-
-**Check if Python is installed:**
-- Open Command Prompt (search "cmd" in Windows)
-- Type: `python --version`
-- You should see something like "Python 3.12.5"
-
-### 1.2 Install Node.js
-
-Node.js is needed to run the website.
-
-1. Go to: https://nodejs.org/
-2. Download the LTS version (recommended for most users)
-3. Run the installer
-4. Keep clicking "Next" with default settings
-5. Click "Install"
-
-**Check if Node.js is installed:**
-- Open Command Prompt
-- Type: `node --version`
-- You should see something like "v20.x.x"
-
-### 1.3 Install VS Code (Optional but Recommended)
-
-VS Code makes it easier to work with the project.
-
-1. Go to: https://code.visualstudio.com/
-2. Download and install VS Code
-3. Open VS Code after installation
+This guide will help you set up and run the Brain Tumor Detection project on your computer.
 
 ---
 
-## Step 2: Open the Project
+## 📋 Prerequisites
 
-1. Extract the ZIP file you received
-2. You will see a folder named `Advanced-Brain-Tumor-Detection-in-MRI-Images-using-Deep-Learning`
-3. **If you have VS Code:**
-   - Right-click on the project folder
-   - Select "Open with Code"
-   - Go to Terminal menu → New Terminal
-4. **If you don't have VS Code:**
-   - Open Command Prompt
-   - Type: `cd` followed by space
-   - Drag and drop the project folder into Command Prompt
-   - Press Enter
+### Required Software
+
+| Software | Version | Download Link |
+|----------|---------|---------------|
+| Python | 3.10+ | https://www.python.org/downloads/ |
+| Node.js | 18+ LTS | https://nodejs.org/ |
+| VS Code | Latest | https://code.visualstudio.com/ |
 
 ---
 
-## Step 3: Run the Backend (AI Server)
+## 🚀 Quick Start (3 Steps)
 
-The backend is the brain of the project. It runs the AI model.
-
-**Open terminal and type these commands one by one:**
+### Step 1: Start Backend (AI Server)
 
 ```bash
 cd backend
-```
-
-Press Enter. Then type:
-
-```bash
 pip install -r requirements.txt
-```
-
-Press Enter and wait (this may take 5-10 minutes).
-
-After installation completes, type:
-
-```bash
 python app.py
 ```
 
-Press Enter.
+✅ You should see: `[OK] Model loaded successfully - Running on http://127.0.0.1:5000`
 
-**You should see:**
-```
-[OK] Model loaded successfully
-* Running on http://127.0.0.1:5000
-```
+### Step 2: Start Frontend (Web App)
 
-**IMPORTANT: Keep this terminal window open!** The backend must keep running.
-
----
-
-## Step 4: Run the Frontend (Website)
-
-The frontend is the website where you upload MRI images.
-
-**Open a NEW terminal window** (don't close the backend terminal).
-
-**In the new terminal, type these commands:**
+Open a **new terminal** and run:
 
 ```bash
 cd frontend
-```
-
-Press Enter. Then type:
-
-```bash
 npm install
-```
-
-Press Enter and wait (this may take 5-10 minutes).
-
-After installation completes, type:
-
-```bash
 npm start
 ```
 
-Press Enter.
+✅ You should see: `Compiled successfully! Local: http://localhost:3000`
 
-**You should see:**
+### Step 3: Open in Browser
+
+Navigate to: **http://localhost:3000**
+
+---
+
+## 📖 Detailed Installation Guide
+
+### 1. Install Python
+
+1. Download Python from https://www.python.org/downloads/
+2. **IMPORTANT:** During installation, check ✅ **"Add Python to PATH"**
+3. Click "Install Now"
+
+**Verify installation:**
+```bash
+python --version
+# Should show: Python 3.10.x or higher
 ```
-Compiled successfully!
-Local: http://localhost:3000
+
+### 2. Install Node.js
+
+1. Download Node.js LTS from https://nodejs.org/
+2. Run the installer with default settings
+3. Restart your terminal after installation
+
+**Verify installation:**
+```bash
+node --version
+# Should show: v18.x.x or higher
 ```
 
-**IMPORTANT: Keep this terminal window open too!** The frontend must keep running.
+### 3. Install VS Code (Recommended)
+
+1. Download from https://code.visualstudio.com/
+2. Install with default settings
+3. Open the project folder in VS Code
 
 ---
 
-## Step 5: Open in Browser
+## 🏗️ Project Architecture
 
-The website will open automatically in your browser.
-
-If it doesn't open automatically:
-1. Open any web browser (Chrome, Firefox, Edge)
-2. Type in address bar: `http://localhost:3000`
-3. Press Enter
-
-**You should see the Brain Tumor Detection website!**
-
----
-
-## How to Use the Website
-
-1. **Upload an MRI Image:**
-   - Click "Browse Files" or drag and drop an image
-   - Use images from the `data/raw/Testing` folder for testing
-
-2. **Start Analysis:**
-   - Click the "Start Analysis" button
-   - Wait a few seconds
-
-3. **View Results:**
-   - You will see the tumor type prediction
-   - Confidence score shows how sure the AI is
-   - View all probability distributions
-
-4. **Upload Another Image:**
-   - Click "Clear Study" button
-   - Upload a new image and repeat
-
----
-
-## Common Problems and Solutions
-
-### Problem 1: "Python is not recognized"
-**Solution:**
-- Uninstall Python
-- Reinstall Python and CHECK the box "Add Python to PATH"
-
-### Problem 2: "pip is not recognized"
-**Solution:**
-- Close all terminals
-- Open a new terminal
-- Try again
-
-### Problem 3: "Port 5000 is already in use"
-**Solution:**
-- Close all Command Prompt windows
-- Try again
-- OR restart your computer
-
-### Problem 4: "Port 3000 is already in use"
-**Solution:**
-- Close all Command Prompt windows
-- Try again
-
-### Problem 5: Installation takes too long
-**Solution:**
-- Be patient, it can take 10-15 minutes
-- Make sure you have good internet connection
-- Don't close the terminal while installing
-
-### Problem 6: "Model not loaded"
-**Solution:**
-- Make sure you have the trained model file in `backend/models/trained/` folder
-- The file should be named `final_model.keras`
-- If missing, you need to train the model first (see README.md)
-
-### Problem 7: Website not opening
-**Solution:**
-- Check if backend is running (first terminal should show "Running on...")
-- Check if frontend is running (second terminal should show "Compiled successfully")
-- Try typing `http://localhost:3000` manually in browser
+```
+NeuroScan-AI/
+├── backend/                    # Python Flask API
+│   ├── app.py                  # Main server application
+│   ├── model.py                # Model loading utilities
+│   ├── predict.py              # Prediction logic
+│   ├── train_fixed.py          # Training script (MobileNetV2)
+│   ├── config.yaml             # Configuration file
+│   ├── requirements.txt        # Python dependencies
+│   └── models/
+│       └── trained/
+│           ├── final_model.keras    # Trained model (96.95% accuracy)
+│           └── class_info.json      # Class labels
+│
+├── frontend/                   # React Web Application
+│   ├── src/
+│   │   ├── App.js              # Main React component
+│   │   ├── App.css             # Styles (Green/White theme)
+│   │   └── index.js            # Entry point
+│   └── package.json            # Node.js dependencies
+│
+├── data/                       # Dataset
+│   └── raw/
+│       ├── Training/           # Training images
+│       └── Testing/            # Test images
+│
+├── INSTRUCTIONS.md             # This file
+├── README.md                   # Project overview
+└── RUN.md                      # Quick run guide
+```
 
 ---
 
-## Important Notes
+## 🤖 Model Information
 
-1. **Always run backend first, then frontend**
-2. **Keep both terminal windows open** while using the website
-3. **Don't close the terminals** or the website will stop working
-4. **To stop the project:**
-   - Press `Ctrl + C` in both terminal windows
-   - Or simply close the terminal windows
+| Property | Value |
+|----------|-------|
+| Architecture | MobileNetV2 (Transfer Learning) |
+| Input Size | 224 × 224 pixels |
+| Training Accuracy | 96.95% |
+| Classes | 4 (Glioma, Meningioma, Pituitary, No Tumor) |
+| Training Strategy | 3-Phase Gradual Unfreezing |
 
-5. **To run again later:**
-   - Just repeat Step 3, Step 4, and Step 5
-   - No need to reinstall (skip `pip install` and `npm install`)
+### Detection Classes
+
+| Class | Description | Risk Level |
+|-------|-------------|------------|
+| **Glioma** | Tumors from glial cells | High |
+| **Meningioma** | Tumors on brain membranes | Moderate |
+| **Pituitary** | Pituitary gland tumors | Moderate |
+| **No Tumor** | No abnormality detected | None |
 
 ---
 
-## Quick Commands Summary
+## 🖥️ Using the Application
 
-**For Backend:**
+### Upload & Analyze
+
+1. **Upload MRI Scan**
+   - Drag & drop an MRI image, OR
+   - Click to browse files
+   - Supported formats: JPG, JPEG, PNG
+
+2. **Click "Analyze Scan"**
+   - Wait for AI processing (1-3 seconds)
+
+3. **View Results**
+   - Diagnosis with confidence level
+   - Probability distribution charts
+   - Clinical recommendations
+
+### Features
+
+- ✅ Real-time AI analysis
+- ✅ Interactive probability charts
+- ✅ Confidence trend tracking
+- ✅ Scan history
+- ✅ Professional medical UI
+
+---
+
+## ⚠️ Troubleshooting
+
+### Common Issues & Solutions
+
+| Problem | Solution |
+|---------|----------|
+| `'python' is not recognized` | Reinstall Python with "Add to PATH" checked |
+| `Port 5000 is already in use` | Close other terminals or run `taskkill /F /IM python.exe` |
+| `Port 3000 is already in use` | Close other terminals or run `taskkill /F /IM node.exe` |
+| `Model not loaded` | Ensure `models/trained/final_model.keras` exists |
+| `CORS error` | Make sure backend is running on port 5000 |
+| `npm install fails` | Delete `node_modules` folder and try again |
+
+### Restart Commands
+
+**Stop all processes:**
+```bash
+# In each terminal, press Ctrl+C
+```
+
+**Restart backend:**
 ```bash
 cd backend
 python app.py
 ```
 
-**For Frontend (in new terminal):**
+**Restart frontend:**
 ```bash
 cd frontend
 npm start
 ```
 
-**That's it!** Open browser at http://localhost:3000
+---
+
+## 🎯 API Endpoints
+
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/api/health` | GET | Check server status |
+| `/api/predict` | POST | Upload and analyze MRI |
+
+### Example API Call
+
+```bash
+curl -X POST -F "file=@brain_mri.jpg" http://localhost:5000/api/predict
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "predicted_class": "glioma",
+  "confidence": 94.5,
+  "all_probabilities": {
+    "glioma": 94.5,
+    "meningioma": 3.2,
+    "pituitary": 1.8,
+    "notumor": 0.5
+  }
+}
+```
 
 ---
 
-## Project Folder Structure
+## 🔧 Training the Model (Optional)
 
-You don't need to understand this, but here's what each folder does:
+If you need to retrain the model:
 
+```bash
+cd backend
+python train_fixed.py
 ```
-Project Folder/
-├── backend/           → AI model and server
-├── frontend/          → Website interface
-├── data/             → MRI images for testing
-├── README.md         → Project overview
-└── INSTRUCTIONS.md   → This file
-```
+
+**Training Features:**
+- 3-phase gradual unfreezing
+- Class weight balancing
+- Label smoothing (0.1)
+- L2 regularization + Dropout
+- Data augmentation
 
 ---
 
-## Need Help?
+## 📱 Technology Stack
+
+### Backend
+- Python 3.10+
+- TensorFlow 2.16+
+- Flask (Web Framework)
+- MobileNetV2 (Pre-trained model)
+
+### Frontend
+- React 18
+- Chart.js (Visualizations)
+- Axios (HTTP Client)
+- React Dropzone (File Upload)
+
+---
+
+## 🎓 For Presentations
+
+### Demo Steps
+
+1. **Before presentation:**
+   ```bash
+   # Terminal 1
+   cd backend && python app.py
+   
+   # Terminal 2
+   cd frontend && npm start
+   ```
+
+2. **During presentation:**
+   - Show the landing page and stats
+   - Upload test images from `data/raw/Testing/`
+   - Explain the charts and confidence scores
+   - Show history feature
+
+3. **Key points to mention:**
+   - 96.95% accuracy
+   - 4 tumor types detected
+   - MobileNetV2 architecture
+   - Real-time analysis
+
+---
+
+## 📞 Support
+
+If you encounter issues:
 
 1. Read the error message carefully
-2. Check "Common Problems and Solutions" section above
-3. Make sure Python and Node.js are installed correctly
-4. Try restarting your computer
-5. Ask your project guide or teacher
+2. Check the troubleshooting section
+3. Restart both servers
+4. Ensure all software is installed correctly
 
 ---
 
-## For Demonstration/Presentation
+## ⚖️ Disclaimer
 
-When showing this project to teachers or examiners:
-
-1. **Before the presentation:**
-   - Start backend: `cd backend && python app.py`
-   - Start frontend: `cd frontend && npm start`
-   - Open http://localhost:3000
-
-2. **During the presentation:**
-   - Show the website interface
-   - Upload a test MRI image from `data/raw/Testing/`
-   - Click "Start Analysis"
-   - Explain the AI prediction results
-
-3. **After the presentation:**
-   - Press Ctrl+C in both terminals to stop
-   - Or just close the terminal windows
+> **This application is for educational purposes only.**
+> 
+> AI predictions should **NOT** be used for actual medical diagnosis. Always consult qualified healthcare professionals for medical advice and diagnosis.
 
 ---
 
-**Project Status:** Ready to Run
-**Last Updated:** January 26, 2026
-**Developed By:** B.Tech 4th Year Students
-
----
-
-**Good luck with your project! 🎓**
+**Last Updated:** January 2026  
+**Model Accuracy:** 96.95%  
+**Status:** ✅ Production Ready

@@ -30,14 +30,21 @@ class BrainTumorAPI:
         self.app = Flask(__name__)
         CORS(self.app)
 
+        # Get the directory where app.py is located
+        self.base_dir = Path(__file__).parent.absolute()
+
         # Load configuration
-        with open(config_path, 'r') as f:
+        config_full_path = self.base_dir / config_path
+        with open(config_full_path, 'r') as f:
             self.config = yaml.safe_load(f)
 
         # Setup
         self.model = None
-        self.upload_folder = self.config['api']['upload_folder']
+        self.upload_folder = self.base_dir / self.config['api']['upload_folder']
         os.makedirs(self.upload_folder, exist_ok=True)
+
+        # Initialize class names from config (will be overridden if class_info.json exists)
+        self.class_names = self.config['classes']
 
         # Initialize (simplified)
         self.gemini_generator = None
@@ -57,10 +64,10 @@ class BrainTumorAPI:
 
         # Try multiple model paths
         model_paths = [
-            'models/trained/final_model.keras',
-            'models/trained/brain_tumor_model_best.keras',
-            f"{self.config['paths']['model_save_path']}/best_model.h5",
-            f"{self.config['paths']['model_save_path']}/best_model.keras"
+            self.base_dir / 'models/trained/final_model.keras',
+            self.base_dir / 'models/trained/brain_tumor_model_best.keras',
+            self.base_dir / f"{self.config['paths']['model_save_path']}/best_model.h5",
+            self.base_dir / f"{self.config['paths']['model_save_path']}/best_model.keras"
         ]
 
         for model_path in model_paths:
@@ -71,7 +78,7 @@ class BrainTumorAPI:
                     print(f"[OK] Model loaded successfully from {model_path}")
 
                     # Load class info if available
-                    class_info_path = 'models/trained/class_info.json'
+                    class_info_path = self.base_dir / 'models/trained/class_info.json'
                     if os.path.exists(class_info_path):
                         with open(class_info_path, 'r') as f:
                             class_info = json.load(f)
@@ -133,16 +140,16 @@ class BrainTumorAPI:
 
             # Get results
             predicted_class_idx = np.argmax(class_probabilities)
-            predicted_class = self.config['classes'][predicted_class_idx]
+            predicted_class = self.class_names[predicted_class_idx]
             confidence = float(class_probabilities[predicted_class_idx]) * 100
 
             # Get top 3 predictions
-            top_k = min(3, len(self.config['classes']))
+            top_k = min(3, len(self.class_names))
             top_indices = np.argsort(class_probabilities)[-top_k:][::-1]
 
             top_predictions = [
                 {
-                    'class': self.config['classes'][idx],
+                    'class': self.class_names[idx],
                     'confidence': float(class_probabilities[idx]) * 100
                 }
                 for idx in top_indices
@@ -158,15 +165,15 @@ class BrainTumorAPI:
                 'confidence': round(confidence, 2),
                 'is_confident': is_confident,
                 'all_probabilities': {
-                    self.config['classes'][i]: round(float(class_probabilities[i]) * 100, 2)
-                    for i in range(len(self.config['classes']))
+                    self.class_names[i]: round(float(class_probabilities[i]) * 100, 2)
+                    for i in range(len(self.class_names))
                 },
                 'top_predictions': top_predictions,
                 'timestamp': datetime.now().isoformat()
             }
 
             # Add warning for tumor cases
-            if predicted_class != 'no_tumor' and is_confident:
+            if predicted_class != 'notumor' and is_confident:
                 result['warning'] = f"Tumor detected: {predicted_class}. Please consult a medical professional."
 
             # Generate Gemini AI Medical Report
@@ -234,8 +241,8 @@ class BrainTumorAPI:
         def get_classes():
             """Get available classification classes"""
             return jsonify({
-                'classes': self.config['classes'],
-                'num_classes': len(self.config['classes'])
+                'classes': self.class_names,
+                'num_classes': len(self.class_names)
             })
 
         @self.app.route('/api/model/info')
@@ -251,8 +258,8 @@ class BrainTumorAPI:
                 'model_loaded': True,
                 'architecture': self.config['model']['architecture'],
                 'input_shape': self.config['model']['input_shape'],
-                'num_classes': self.config['model']['num_classes'],
-                'classes': self.config['classes']
+                'num_classes': len(self.class_names),
+                'classes': self.class_names
             })
 
         @self.app.route('/api/predict', methods=['POST'])
@@ -395,4 +402,4 @@ class BrainTumorAPI:
 # Create API instance
 if __name__ == '__main__':
     api = BrainTumorAPI()
-    api.run(host='0.0.0.0', port=5000, debug=True)
+    api.run(host='0.0.0.0', port=5000, debug=False)
