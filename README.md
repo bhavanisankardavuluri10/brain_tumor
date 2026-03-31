@@ -1,6 +1,6 @@
 # Brain Tumor Detection using Deep Learning
 
-**BTech 4th Year Major Project**
+**BTech 3rd Year Major Project**
 
 An AI-powered system to detect and classify brain tumors from MRI scans using Deep Learning (EfficientNetB4).
 
